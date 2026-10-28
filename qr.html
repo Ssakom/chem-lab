@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>도어 QR 출력</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Pretendard Variable", Pretendard, "Malgun Gothic", sans-serif; color: #16202a; background: #f4f3ee; }
+    .bar { max-width: 900px; margin: 0 auto; padding: 20px 16px; }
+    h1 { margin: 0 0 6px; font-size: 22px; }
+    p { margin: 0 0 12px; color: #5b6672; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; }
+    input { flex: 1; min-width: 220px; padding: 10px 12px; font: inherit; border: 1px solid #cfccc2; border-radius: 8px; }
+    button { padding: 10px 16px; font: inherit; font-weight: 700; border: 0; border-radius: 8px; background: #16202a; color: #fff; cursor: pointer; }
+    .sheet { max-width: 900px; margin: 0 auto; padding: 0 16px 40px; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+    .tag { background: #fff; border: 2px solid #16202a; border-radius: 12px; padding: 16px; text-align: center; break-inside: avoid; }
+    .tag .code { font-size: 34px; font-weight: 800; letter-spacing: -.02em; }
+    .tag .lb { font-size: 15px; font-weight: 700; }
+    .tag .ds { font-size: 13px; color: #5b6672; margin-bottom: 10px; }
+    .tag .qr { display: flex; justify-content: center; margin: 6px 0 10px; }
+    .tag .how { font-size: 13px; font-weight: 600; }
+    .warn { color: #b42318; font-weight: 700; }
+    @media print {
+      body { background: #fff; }
+      .bar { display: none; }
+      .sheet { grid-template-columns: 1fr 1fr; gap: 10mm; padding: 0; max-width: none; }
+      .tag { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <h1>시약장 도어 QR 출력</h1>
+    <p>사이트 키는 Apps Script 실행 로그(api_showQrUrls)에서 확인할 수 있습니다. 키를 넣고 [만들기]를 누른 뒤 인쇄하세요.</p>
+    <div class="row">
+      <input id="k" placeholder="사이트 키 (영문·숫자 16자리)" autocomplete="off">
+      <button id="make" type="button">만들기</button>
+      <button id="print" type="button">인쇄</button>
+    </div>
+    <p id="msg" class="warn" style="margin-top:10px"></p>
+  </div>
+  <div class="sheet" id="sheet"></div>
+
+  <script src="qrcode.js"></script>
+  <script>
+    (function () {
+      var DOORS = [
+        ["A1", "시약장 A · 도어 1", "무기염류 (아이오딘 용액류 등)"],
+        ["A2", "시약장 A · 도어 2", "무기염류 (중성염·산화성 염류)"],
+        ["A3", "시약장 A · 도어 3", "무기산류"],
+        ["A4", "시약장 A · 도어 4", "수은 밀봉상자 단독 보관"],
+        ["B12", "시약장 B · 도어 1·2", "유기화합물 및 용매"],
+        ["B3", "시약장 B · 도어 3", "강염기 및 유기염기류"],
+        ["B4", "시약장 B · 도어 4", "금속 단체 및 금수성 물질"]
+      ];
+      var base = location.href.replace(/qr\.html.*$/, "");
+      var kIn = document.getElementById("k");
+      var q = new URLSearchParams(location.search);
+      if (q.get("k")) kIn.value = q.get("k");
+
+      function make() {
+        var key = kIn.value.trim();
+        var msg = document.getElementById("msg");
+        if (!/^[A-Za-z0-9]{8,64}$/.test(key)) { msg.textContent = "사이트 키를 정확히 넣어 주세요."; return; }
+        msg.textContent = "";
+        var sheet = document.getElementById("sheet");
+        sheet.innerHTML = "";
+        DOORS.forEach(function (d) {
+          var url = base + "?k=" + encodeURIComponent(key) + "&door=" + d[0];
+          var el = document.createElement("div");
+          el.className = "tag";
+          el.innerHTML = '<div class="code"></div><div class="lb"></div><div class="ds"></div><div class="qr"></div><div class="how">휴대폰 카메라로 찍으면 보관 시약과 MSDS를 볼 수 있습니다</div>';
+          el.querySelector(".code").textContent = d[0];
+          el.querySelector(".lb").textContent = d[1];
+          el.querySelector(".ds").textContent = d[2];
+          el.querySelector(".qr").innerHTML = window.ChemQR.svg(url, 180);
+          sheet.appendChild(el);
+        });
+      }
+      document.getElementById("make").addEventListener("click", make);
+      document.getElementById("print").addEventListener("click", function () { window.print(); });
+      if (kIn.value) make();
+    })();
+  </script>
+</body>
+</html>
