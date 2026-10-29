@@ -23,6 +23,8 @@
     .tag .qr { display: flex; justify-content: center; margin: 6px 0 10px; }
     .tag .how { font-size: 13px; font-weight: 600; }
     .warn { color: #b42318; font-weight: 700; }
+    .tag.main { grid-column: 1 / -1; background: #e2f0ee; border-color: #0e6b66; }
+    .tag.main .code { font-size: 30px; }
     @media print {
       body { background: #fff; }
       .bar { display: none; }
@@ -40,6 +42,10 @@
       <button id="make" type="button">만들기</button>
       <button id="print" type="button">인쇄</button>
     </div>
+    <label style="display:flex;gap:8px;align-items:center;margin-top:10px;color:#16202a">
+      <input type="checkbox" id="mainKey" checked style="flex:none;min-width:0;width:18px;height:18px">
+      메인 QR로도 사용 기록을 할 수 있게 하기 (과학실 밖에 붙일 QR이면 체크를 해제하세요)
+    </label>
     <p id="msg" class="warn" style="margin-top:10px"></p>
   </div>
   <div class="sheet" id="sheet"></div>
@@ -68,6 +74,14 @@
         msg.textContent = "";
         var sheet = document.getElementById("sheet");
         sheet.innerHTML = "";
+        var withKey = document.getElementById("mainKey").checked;
+        var main = document.createElement("div");
+        main.className = "tag main";
+        main.innerHTML = '<div class="code">과학실 시약 안내</div><div class="ds"></div><div class="qr"></div><div class="how"></div>';
+        main.querySelector(".ds").textContent = "시약 검색 · 시약장 전체 보기 · MSDS" + (withKey ? " · 사용 기록" : " (조회 전용)");
+        main.querySelector(".how").textContent = "휴대폰 카메라로 찍으면 시약 안내 사이트가 열립니다";
+        main.querySelector(".qr").innerHTML = window.ChemQR.svg(withKey ? base + "?k=" + encodeURIComponent(key) : base, 220);
+        sheet.appendChild(main);
         DOORS.forEach(function (d) {
           var url = base + "?k=" + encodeURIComponent(key) + "&door=" + d[0];
           var el = document.createElement("div");
@@ -81,6 +95,7 @@
         });
       }
       document.getElementById("make").addEventListener("click", make);
+      document.getElementById("mainKey").addEventListener("change", function () { if (document.getElementById("sheet").children.length) make(); });
       document.getElementById("print").addEventListener("click", function () { window.print(); });
       if (kIn.value) make();
     })();
